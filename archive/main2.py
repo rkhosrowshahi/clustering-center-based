@@ -46,7 +46,7 @@ for rcount in tqdm(range(3)):
     bounds = [(l, h)] * D
     #fun_fitness = bench.get_function(fn)
     fun_fitness = all_functions[fn-1]
-    opt = CCDE(fun_fitness, bounds, NC=0, mutation=0.5, maxfes=3e+05) # , disp=True, save_link=f'Results/f{fn}_DE_run{rcount}')
+    opt = CCDE(fun_fitness, bounds, NC=0, mutation=0.5, maxfes=3e+05) # , disp=True, save_link=f'results/f{fn}_DE_run{rcount}')
      =opt.solve()
     # best_sol, best_fit = result.x, result.fun
     all_best_fs = opt.all_best_fs

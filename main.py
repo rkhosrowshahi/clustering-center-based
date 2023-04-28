@@ -8,7 +8,7 @@ D = int(input())
 algos = ['CCDE', 'DE']
 df_cols = ['Fn', 'CCDE', 'DE']
 df = pd.DataFrame(columns=df_cols)
-csv_link = f"D{D}_{algos[0]}_{algos[1]}.csv"
+csv_link = f"tables/D{D}_{algos[0]}_{algos[1]}.csv"
 df.to_csv(csv_link)
 for fi in range(1, 30):
     if fi == 2:
