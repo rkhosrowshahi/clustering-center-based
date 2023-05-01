@@ -6,7 +6,7 @@ from os.path import exists
 from CCDE import CCDE
 
 
-class CCDE_cec2017:
+class CCDE_CEC2017:
     def __init__(self, fnum=1, dimensions=100, default_bounds=(-100, 100), max_FES=3e+05, num_runs=31,
                  popsize=100, mutation_rate=0.8, crossover_rate=0.9, NC=None, strategy='rand1bin',
                  seed=None, save_file_name=None):
@@ -14,6 +14,7 @@ class CCDE_cec2017:
         problem = all_functions[fnum - 1]
         bounds = [default_bounds] * dimensions
         fstar = fnum * 100
+        # fstar = 0
         self.num_runs = num_runs
         self.algo_name = "CCDE"
         self.NC = NC
@@ -23,7 +24,7 @@ class CCDE_cec2017:
             self.NC_text = ""
         self.model = CCDE(fobj=problem, bounds=bounds, strategy=strategy,
                           mutation=mutation_rate, crossover=crossover_rate,
-                          NC=NC, maxfes=max_FES, popsize=popsize, seed=seed, fstar=fstar)
+                          NC=NC, maxfes=max_FES, popsize=popsize, seed=seed, fstar=fstar, name=self.algo_name)
         self.outputs = None
         self.save_file_name = save_file_name
         if save_file_name is None:
@@ -36,7 +37,7 @@ class CCDE_cec2017:
         last_run = 0
         if exists(self.save_file_name) and continue_to_last_run:
             loadnpz = np.load(self.save_file_name)
-            best_candidate, all_best_fitness= loadnpz["best_candidate"], loadnpz["all_best_fitness"]
+            best_candidate, all_best_fitness = loadnpz["best_candidate"], loadnpz["all_best_fitness"]
             all_mean_fitness = loadnpz["all_mean_fitness"]
             last_run = len(best_candidate)
             print(f"The last saved run was {last_run} and the experiment will continue from the last...")

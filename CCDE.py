@@ -39,46 +39,51 @@ class DEIterator:
         while self.fes < de.maxfes and self.iteration <= de.maxiters:
             # Compute values for f and cr in each iteration
             self.f, self.cr = self.calculate_params()
+            offspring = []
             for self.idx_target in range(de.popsize - de.NC):
                 # Create a mutant using a base vector, and the current f and cr values
+
+                # for i in range(de.popsize - de.NC):
                 mutant = self.create_mutant(self.idx_target)
-                # Evaluate and replace if better
-                self.replace(self.idx_target, mutant)
-                # Yield the current state of the algorithm
-                # yield self
+                offspring.append(mutant)
 
+            self.replace(offspring)
             self.fes += de.popsize - de.NC
-            # Sort population based on fitness values in ascending order
-            sorted_indexes = np.argsort(self.fitness)
-            self.population = self.population[sorted_indexes]
-            self.fitness = self.fitness[sorted_indexes]
-            self.best_idx = 0
-            self.best_fitness = self.fitness[self.best_idx]
-            # Clustering the population in order to calculate the centroids
-            # in order to be injected into the end of the population.
-            for cidx in range(de.NC):
-                cluster = self.population[cidx * self.CS: (cidx + 1) * self.CS]
-                centroid = np.mean(cluster, axis=0)
-                centroid_fitness, = de.evaluate([centroid])
+            # Evaluate and replace if better
+            # self.replace(self.idx_target, mutant)
+            # Yield the current state of the algorithm
+            # yield self
+            if de.NC > 0:
+                # Sort population based on fitness values in ascending order
+                sorted_indexes = np.argsort(self.fitness)
+                self.population = self.population[sorted_indexes]
+                self.fitness = self.fitness[sorted_indexes]
+                self.best_idx = 0
+                self.best_fitness = self.fitness[self.best_idx]
+                # Clustering the population in order to calculate the centroids
+                # in order to be injected into the end of the population.
+                centroids = []
+                for cidx in range(de.NC):
+                    cluster = np.copy(self.population[cidx * self.CS: (cidx + 1) * self.CS])
+                    centroid = np.mean(cluster, axis=0)
+                    centroids.append(centroid)
+                # Inject centroids
+                self.inject_centroids(centroids)
+                # Increasing function evaluation value so far
+                self.fes += de.NC
+                # Sort population based on new centroids
+                sorted_indexes = np.argsort(self.fitness)
+                self.population = self.population[sorted_indexes]
+                self.fitness = self.fitness[sorted_indexes]
+                self.best_idx = 0
+                self.best_fitness = self.fitness[self.best_idx]
 
-                if centroid_fitness <= self.best_fitness:
-                    self.best_fitness = centroid_fitness
-                    self.best_idx = de.popsize - de.NC + cidx
-
-                # Injecting the Centeroid to the population
-                self.population[de.popsize - de.NC + cidx, :] = np.copy(centroid)
-                self.fitness[de.popsize - de.NC + cidx] = centroid_fitness
-
-            sorted_indexes = np.argsort(self.fitness)
-            self.population = self.population[sorted_indexes]
-            self.fitness = self.fitness[sorted_indexes]
-            self.best_idx = 0
-            self.best_fitness = self.fitness[self.best_idx]
+            if self.fitness.min() <= self.best_fitness:
+                self.best_fitness = self.fitness.min()
+                self.best_idx = self.fitness.argmin()
             # Saving latest best and mean of fitness values
             self.all_mean_fs.append(np.mean(self.fitness))
             self.all_best_fs.append(self.best_fitness)
-            # Increasing function evaluation value so far
-            self.fes += de.NC
             self.iteration += 1
             yield self
 
@@ -90,9 +95,22 @@ class DEIterator:
         # parameters are inherited from the base vector.
         return self.de.mutant(i, self.population, self.f, self.cr)
 
-    def replace(self, i, mutant):
-        mutant_fitness, = self.de.evaluate([mutant])
-        return self.replacement(i, mutant, mutant_fitness)
+    def replace(self, offspring):
+        # de = self.de
+        offspring_fitness = self.de.evaluate(offspring)
+        replace = self.fitness[:self.de.popsize - self.de.NC] >= offspring_fitness
+        self.population[:self.de.popsize - self.de.NC] = np.where(replace[:, np.newaxis], np.copy(offspring),
+                                                                  self.population[:self.de.popsize - self.de.NC])
+        self.fitness[:self.de.popsize - self.de.NC] = np.where(replace, offspring_fitness,
+                                                               self.fitness[:self.de.popsize - self.de.NC])
+
+    def inject_centroids(self, centroids):
+        # de = self.de
+        centroids_fitness = self.de.evaluate(centroids)
+        self.population[self.de.popsize - self.de.NC:, :] = np.copy(centroids)
+        self.fitness[self.de.popsize - self.de.NC:] = centroids_fitness
+        # mutant_fitness, = self.de.evaluate([mutant])
+        # return self.replacement(i, mutant, mutant_fitness)
 
     def replacement(self, target_idx, mutant, mutant_fitness):
         if mutant_fitness <= self.best_fitness:
@@ -141,7 +159,7 @@ class CCDE:
                     'rand2exp': 'rand2'}
 
     def __init__(self, fobj, bounds, strategy='rand1bin', mutation=0.5, crossover=0.9, maxfes=3e+06, popsize=100,
-                 seed=None, NC=None, fstar=0):
+                 seed=None, NC=None, fstar=0, name="CCDE"):
         # Convert crossover param to an interval, as in mutation. If min/max values in the interval are
         # different, a dither mechanism is used for crossover (although this is not recommended, but still supported)
 
@@ -179,7 +197,7 @@ class CCDE:
         # if the fstar is bigger than 0, the error has to be calculated by F(x) - F(x*)
         self.fstar = fstar
         self.initialize_random_state(seed)
-        self.name = 'CCDE'
+        self.name = name
 
     @staticmethod
     def initialize_random_state(seed):
