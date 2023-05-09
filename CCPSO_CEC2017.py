@@ -3,12 +3,12 @@ import matplotlib.pyplot as plt
 # from cec2017.functions import *
 from cec2017.functions import all_functions
 from os.path import exists
-from DE import DE
+from PSO import PSO
 
 
-class CCDE_CEC2017:
+class CCPSO_CEC2017:
     def __init__(self, fnum=1, dimensions=100, default_bounds=(-100, 100), max_FES=3e+05, num_runs=31,
-                 popsize=100, mutation_rate=0.8, crossover_rate=0.9, NC=None, strategy='rand1bin',
+                 popsize=100, w=0.5, c1=1, c2=1, NC=0,
                  seed=None, save_file_name=None):
         # problem = GET_FUNCTION.get(str(fnum))
         problem = all_functions[fnum - 1]
@@ -16,19 +16,18 @@ class CCDE_CEC2017:
         fstar = fnum * 100
         # fstar = 0
         self.num_runs = num_runs
-        self.algo_name = "CCDE"
+        self.algo_name = "CCPSO"
         self.NC = NC
         self.NC_text = f"_NC{NC}"
         if NC is None or NC == 0:
-            self.algo_name = "DE"
+            self.algo_name = "PSO"
             self.NC_text = ""
-        self.model = DE(fobj=problem, bounds=bounds, strategy=strategy,
-                          mutation=mutation_rate, crossover=crossover_rate,
-                          NC=NC, maxfes=max_FES, popsize=popsize, seed=seed, fstar=fstar, name=self.algo_name)
+        self.model = PSO(fobj=problem, bounds=bounds, w=w, c1=c1, c2=c2,
+                          NC=NC, maxfes=max_FES, num_particles=popsize, fstar=fstar)
         self.outputs = None
         self.save_file_name = save_file_name
         if save_file_name is None:
-            self.save_file_name = f"results/{self.algo_name}_f{fnum}_{dimensions}D_MR{mutation_rate}_CR{crossover_rate}_{strategy}{self.NC_text}.npz"
+            self.save_file_name = f"results/{self.algo_name}_f{fnum}_{dimensions}D_w{w}_c1{c1}_c2{c2}{self.NC_text}.npz"
         self.popsize = popsize
         self.max_FES = max_FES
 
@@ -42,7 +41,7 @@ class CCDE_CEC2017:
             last_run = len(best_candidate)
             print(f"The last saved run was {last_run} and the experiment will continue from the last...")
         for run in range(last_run, self.num_runs):
-            self.outputs = self.model.solve(show_progress=True)
+            self.outputs = self.model.solve()
 
             print(f"{self.algo_name}, Run {run + 1}, Best Error: {self.outputs[1]:E}")
             if run != 0:

@@ -144,7 +144,7 @@ class DEIterator:
 #                 super().replacement(j, self.mutants[j], mutant_fitness[j])
 
 
-class CCDE:
+class DE:
     _binomial = {'best1bin': 'best1',
                  'randtobest1bin': 'randtobest1',
                  'currenttobest1bin': 'currenttobest1',

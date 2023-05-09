@@ -2,7 +2,7 @@
 import numpy as np
 from cec2017.functions import f5
 
-from CCDE import CCDE
+from DE import CCDE
 
 samples = 3
 dimension = 50
